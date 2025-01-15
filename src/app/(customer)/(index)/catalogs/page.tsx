@@ -3,8 +3,6 @@ import Navbar from "../_components/navbar";
 import SearchBar from "./_components/search-bar";
 import FilterPrice from "./_components/filter-price";
 import FilterStock from "./_components/filter-stock";
-import FilterBrands from "./_components/filter-brands";
-import FilterLocation from "./_components/filter-location";
 import FilterCategories from "./_components/filter-categories";
 import ProductListing from "./_components/product-listing";
 
@@ -21,10 +19,6 @@ export default function CatalogPage() {
           <FilterPrice />
           <hr className="border-[#E5E5E5]" />
           <FilterStock />
-          <hr className="border-[#E5E5E5]" />
-          <FilterBrands />
-          <hr className="border-[#E5E5E5]" />
-          <FilterLocation />
           <hr className="border-[#E5E5E5]" />
           <FilterCategories />
         </form>

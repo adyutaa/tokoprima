@@ -1,34 +1,3 @@
-// import { TFilter } from "@/hooks/useFilter";
-// import { TProduct } from "@/types";
-
-// export async function fetchProduct(body?: TFilter): Promise<TProduct[]> {
-//   // If a search query is provided, call the search API that interacts with Pinecone
-//   if (body?.search) {
-//     const res = await fetch("/api/catalog", {
-//       method: "POST",
-//       body: JSON.stringify({ search: body.search }), // Send the search query
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     });
-
-//     const data = await res.json();
-//     return data ?? []; // Return the search results
-//   }
-
-//   // If no search query, fetch the full catalog (adjust this as needed)
-//   const res = await fetch("/api/catalog", {
-//     method: "POST",
-//     body: JSON.stringify(body ?? {}),
-//     headers: {
-//       "Content-Type": "application/json",
-//     },
-//   });
-
-//   const data = await res.json();
-//   return data ?? []; // Return the full catalog
-// }
-
 // catalogs/lib.ts
 import { TFilter } from "@/hooks/useFilter";
 import { TProduct } from "@/types";

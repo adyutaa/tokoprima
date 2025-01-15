@@ -28,7 +28,7 @@ model User {
 
   orders   Order[]
   sessions Session[]
-  // review   Review[]
+  reviews  Review[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -41,28 +41,7 @@ model Session {
   user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
 }
 
-model Brand {
-  id   Int    @id @default(autoincrement())
-  name String @db.VarChar(255)
-  logo String @db.VarChar(255)
-
-  products Product[]
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-}
-
 model Category {
-  id   Int    @id @default(autoincrement())
-  name String @db.VarChar(255)
-
-  products Product[]
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-}
-
-model Location {
   id   Int    @id @default(autoincrement())
   name String @db.VarChar(255)
 
@@ -80,56 +59,37 @@ enum ProductStock {
 model Product {
   id Int @id @default(autoincrement())
 
-  brand_id    Int
-  brand       Brand        @relation(fields: [brand_id], references: [id])
   category_id Int
   category    Category     @relation(fields: [category_id], references: [id])
-  location_id Int
-  location    Location     @relation(fields: [location_id], references: [id])
   name        String       @db.VarChar(255)
   description String       @db.Text
   price       BigInt       @db.BigInt
   stock       ProductStock
   images      String[]
 
-  orders OrderProduct[]
+  orders  OrderProduct[]
+  reviews Review[]
+
+  rating       Float?
+  rating_count Int?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-  // Review     Review[]
 }
 
-// model Product {
-//   id Int @id @default(autoincrement())
+model Review {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  user       User     @relation(fields: [user_id], references: [id])
+  product_id Int
+  product    Product  @relation(fields: [product_id], references: [id])
+  rating     Float
+  comment    String   @db.Text
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-//   brand_id Int
-//   brand    Brand @relation(fields: [brand_id], references: [id])
-
-//   category_id Int
-//   category    Category @relation(fields: [category_id], references: [id])
-
-//   location_id Int
-//   location    Location @relation(fields: [location_id], references: [id])
-
-//   name        String @db.VarChar(255)
-//   description String @db.Text
-
-//   price BigInt @db.BigInt // discounted_price
-
-//   rating       Float? // rating
-//   rating_count Int? // rating_count
-
-//   images String[] // Array of image URLs (img_link)
-
-//   stock ProductStock
-
-//   orders OrderProduct[]
-
-//   reviews Review[] // New field to link Reviews to Product
-
-//   created_at DateTime @default(now())
-//   updated_at DateTime @updatedAt
-// }
+  @@unique([user_id, product_id])
+}
 
 enum StatusOrder {
   pending
@@ -182,18 +142,3 @@ model OrderProduct {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
-
-// model Review {
-//   id         Int     @id @default(autoincrement()) // Internal review ID
-//   review_id  String  @unique // Unique review ID from Amazon
-//   user_id    Int // ID of the user who wrote the review
-//   user_name  String  @db.VarChar(255) // Name of the user
-//   title      String  @db.VarChar(255) // Short review title
-//   product_id Int // The product being reviewed
-//   product    Product @relation(fields: [product_id], references: [id]) // Link to the Product model
-
-//   created_at DateTime @default(now()) // Timestamp when the review was written
-//   updated_at DateTime @updatedAt // Timestamp for when the review was last updated
-
-//   user User @relation(fields: [user_id], references: [id]) // Link to the User model (optional)
-// }

@@ -6,9 +6,7 @@ import { ActionResult } from "@/types";
 import { redirect } from "next/navigation";
 import prisma from "../../../../../../../lib/prisma";
 import { ProductStock } from "@prisma/client";
-import OpenAI from "openai";
 import { Pinecone, PineconeRecord, RecordMetadata } from "@pinecone-database/pinecone";
-import { Index } from "@pinecone-database/pinecone";
 import { initializePinecone } from "../../../../../../../lib/pinecone";
 import { generateProductEmbeddings } from "@/lib/embeddings";
 
@@ -22,9 +20,7 @@ export async function storeProduct(_: unknown, formData: FormData): Promise<Acti
     name: formData.get("name"),
     price: formData.get("price"),
     description: formData.get("description"),
-    brand_id: formData.get("brand_id"),
     category_id: formData.get("category_id"),
-    location_id: formData.get("location_id"),
     stock: formData.get("stock"),
     images: formData.getAll("images"),
   });
@@ -49,8 +45,6 @@ export async function storeProduct(_: unknown, formData: FormData): Promise<Acti
         name: parse.data.name,
         description: parse.data.description,
         category_id: Number.parseInt(parse.data.category_id),
-        location_id: Number.parseInt(parse.data.location_id),
-        brand_id: Number.parseInt(parse.data.brand_id),
         price: Number.parseInt(parse.data.price),
         stock: parse.data.stock as ProductStock,
         images: filenames,
@@ -67,8 +61,6 @@ export async function storeProduct(_: unknown, formData: FormData): Promise<Acti
         name: newProduct.name,
         description: newProduct.description,
         category_id: newProduct.category_id,
-        location_id: newProduct.location_id,
-        brand_id: newProduct.brand_id,
         price: newProduct.price.toString(),
         stock: newProduct.stock, // would potentially error because prisma error pinecone automatically error or wrong.
         // further do for images...
@@ -91,9 +83,7 @@ export async function updateProduct(_: unknown, formData: FormData, id: number):
     name: formData.get("name"),
     price: formData.get("price"),
     description: formData.get("description"),
-    brand_id: formData.get("brand_id"),
     category_id: formData.get("category_id"),
-    location_id: formData.get("location_id"),
     stock: formData.get("stock"),
     id: id,
   });
@@ -148,8 +138,6 @@ export async function updateProduct(_: unknown, formData: FormData, id: number):
         name: parse.data.name,
         description: parse.data.description,
         category_id: Number.parseInt(parse.data.category_id),
-        location_id: Number.parseInt(parse.data.location_id),
-        brand_id: Number.parseInt(parse.data.brand_id),
         price: Number.parseInt(parse.data.price),
         stock: parse.data.stock as ProductStock,
         images: filenames,
@@ -167,8 +155,6 @@ export async function updateProduct(_: unknown, formData: FormData, id: number):
         name: updatedProduct.name,
         description: updatedProduct.description,
         category_id: updatedProduct.category_id,
-        location_id: updatedProduct.location_id,
-        brand_id: updatedProduct.brand_id,
         price: updatedProduct.price.toString(),
         stock: updatedProduct.stock.toString(), // Ensure stock is a string
         images: filenames, // Optional: Store the image filenames or URLs
