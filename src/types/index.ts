@@ -19,17 +19,18 @@ export type Tedit = {
 // };
 
 export type TProduct = {
-  // id: number;
-  // category_id: number;
-  // name: string;
-  // description: string;
-  // price: bigint; // Ubah dari number ke bigint
-  // // stock: ProductStock; // Pastikan ProductStock sudah terdefinisi (misalnya sebagai enum atau tipe string)
-  // images: string[] | null;
-  // created_at: Date;
-  // updated_at: Date;
-  // rating: number | null;
-  // rating_count: number | null;
+  id: number;
+  category_id: number;
+  name: string;
+  description: string;
+  price: number; // Ubah dari number ke bigint
+  // stock: ProductStock; // Pastikan ProductStock sudah terdefinisi (misalnya sebagai enum atau tipe string)
+  images: string[] | null;
+  created_at: Date;
+  updated_at: Date;
+
+  rating: number | null;
+  rating_count: number | null;
 };
 
 export type ReviewSelect = {

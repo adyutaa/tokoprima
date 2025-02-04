@@ -90,9 +90,9 @@ export default function LandingPage() {
         </div>
       </header>
       <section id="content" className="container max-w-[1130px] mx-auto flex flex-col gap-[50px] pt-[50px] pb-[100px]">
-        <Suspense fallback={<span>Loading...</span>}>
+        {/* <Suspense fallback={<span>Loading...</span>}>
           <ListCategory />
-        </Suspense>
+        </Suspense> */}
         <Suspense fallback={<span>Loading...</span>}>
           <ListProducts
             title={

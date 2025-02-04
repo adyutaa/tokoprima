@@ -12,10 +12,10 @@ export default async function Navbar() {
       </div>
       <ul className="flex items-center gap-[30px]">
         <li className="hover:font-bold hover:text-[#FFC736] transition-all duration-300 font-bold text-[#FFC736]">
-          <Link href="/catalogs">Shop</Link>
+          <Link href="/catalogs">Catalog</Link>
         </li>
         <li className="hover:font-bold hover:text-[#FFC736] transition-all duration-300 text-white">
-          <Link href="/">Categories</Link>
+          <Link href="/">Shop</Link>
         </li>
         <li className="hover:font-bold hover:text-[#FFC736] transition-all duration-300 text-white">
           <Link href="/">Testimonials</Link>
