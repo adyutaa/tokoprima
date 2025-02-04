@@ -2,14 +2,10 @@ import React from "react";
 import FormProduct from "../_components/form-product";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { getBrands } from "../../brands/lib/data";
 import { getCategories } from "../../categories/lib/data";
-import { getLocations } from "../../locations/lib/data";
 
 export default async function CreatePage() {
-  const brands = await getBrands();
   const categories = await getCategories();
-  const locations = await getLocations();
 
   return (
     <FormProduct type="ADD">

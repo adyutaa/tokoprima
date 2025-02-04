@@ -56,14 +56,13 @@ export async function storeProduct(_: unknown, formData: FormData): Promise<Acti
 
     const vector: PineconeRecord<RecordMetadata> = {
       id: newProduct.id.toString(), // Convert to string if necessary
-      values: embedding || [], // Ensure the embedding vector is not undefined
+      values: embedding || [],
       metadata: {
         name: newProduct.name,
         description: newProduct.description,
         category_id: newProduct.category_id,
         price: newProduct.price.toString(),
-        stock: newProduct.stock, // would potentially error because prisma error pinecone automatically error or wrong.
-        // further do for images...
+        stock: newProduct.stock,
       },
     };
     // Upsert into Pinecone
@@ -95,9 +94,7 @@ export async function updateProduct(_: unknown, formData: FormData, id: number):
   }
 
   const product = await prisma.product.findFirst({
-    where: {
-      id: id,
-    },
+    where: { id: id },
   });
 
   if (!product) {
@@ -107,7 +104,6 @@ export async function updateProduct(_: unknown, formData: FormData, id: number):
   }
 
   const uploaded_images = formData.getAll("images") as File[];
-
   let filenames = [];
 
   if (uploaded_images.length === 3) {
@@ -130,10 +126,9 @@ export async function updateProduct(_: unknown, formData: FormData, id: number):
   }
 
   try {
+    // ✅ Update product in Prisma database
     const updatedProduct = await prisma.product.update({
-      where: {
-        id: id,
-      },
+      where: { id: id },
       data: {
         name: parse.data.name,
         description: parse.data.description,
@@ -143,27 +138,34 @@ export async function updateProduct(_: unknown, formData: FormData, id: number):
         images: filenames,
       },
     });
-    // Generate new embeddings for the updated product
-    const embeddingText = `${updatedProduct.name} ${updatedProduct.description} ${updatedProduct.category_id}`;
-    const embedding = await generateProductEmbeddings(embeddingText);
 
-    // Prepare the Pinecone vector to upsert into the namespace
-    const vector: PineconeRecord<RecordMetadata> = {
-      id: updatedProduct.id.toString(), // Convert to string if necessary
-      values: embedding || [], // Ensure embedding is not undefined
-      metadata: {
-        name: updatedProduct.name,
-        description: updatedProduct.description,
-        category_id: updatedProduct.category_id,
-        price: updatedProduct.price.toString(),
-        stock: updatedProduct.stock.toString(), // Ensure stock is a string
-        images: filenames, // Optional: Store the image filenames or URLs
-      },
+    // ✅ Generate new embeddings if the description or name changed
+    let embedding: number[] | undefined;
+    if (updatedProduct.name !== product.name || updatedProduct.description !== product.description) {
+      const embeddingText = `${updatedProduct.name} ${updatedProduct.description} ${updatedProduct.category_id}`;
+      embedding = await generateProductEmbeddings(embeddingText);
+    }
+
+    // ✅ Prepare Pinecone update operation
+    const updateOperation: any = { id: updatedProduct.id.toString() };
+
+    if (embedding && embedding.length > 0) {
+      updateOperation.values = embedding; // Update vector values if new embeddings are generated
+    }
+
+    updateOperation.metadata = {
+      name: updatedProduct.name,
+      description: updatedProduct.description,
+      category_id: updatedProduct.category_id,
+      price: updatedProduct.price.toString(),
+      stock: updatedProduct.stock.toString(),
+      images: filenames,
     };
-    await ns.upsert([vector]);
+
+    // ✅ Update Pinecone record for the specific ID
+    await ns.update(updateOperation);
   } catch (error) {
     console.log(error);
-
     return {
       error: "Failed to update data",
     };

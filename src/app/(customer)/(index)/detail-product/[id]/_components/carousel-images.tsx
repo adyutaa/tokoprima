@@ -8,7 +8,6 @@ interface CarouselImagesProp {
 }
 
 export default function CarouseImages({ images }: CarouselImagesProp) {
-  console.log("Carousel Images:", images); // Debug log
   return (
     <div id="details-images" className="main-carousel overflow-x-hidden mt-[30px]">
       <Flickity

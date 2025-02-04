@@ -1,16 +1,12 @@
-// api/catalog/route.ts
 import { TFilter } from "@/hooks/useFilter";
 import { Pinecone } from "@pinecone-database/pinecone";
-import { getImageUrl } from "@/lib/supabase";
 import { generateProductEmbeddings } from "@/lib/embeddings";
 import prisma from "../../../../lib/prisma";
 import { TProduct } from "@/types";
 
-// Initialize Pinecone client
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
-const index = pc.Index("ecommerce-test"); // Ensure the index name is correct
+const index = pc.Index("ecommerce-test");
 
-// Function to handle Pinecone queries for similar products
 export async function POST(request: Request) {
   try {
     const res = (await request.json()) as TFilter;
@@ -47,35 +43,36 @@ export async function POST(request: Request) {
       const exactProducts: TProduct[] = exactMatches.map((product) => ({
         id: product.id,
         category_name: product.category.name,
-        image_url:
-          product.images && product.images.length > 0
-            ? product.images[0].startsWith("http")
-              ? product.images[0] // Use the full URL as-is
-              : `https://gclyhedubfskowdnrtmg.supabase.co/storage/v1/object/public/products/${product.images[0]}`
-            : null, // Handle cases where there are no images
+        image_url: product.images && product.images.length > 0 ? (product.images[0].startsWith("http") ? product.images[0] : `https://gclyhedubfskowdnrtmg.supabase.co/storage/v1/object/public/products/${product.images[0]}`) : null,
         name: product.name,
         price: Number(product.price),
       }));
 
       responseProducts = exactProducts;
 
+      console.log("Generating embeddings for query:", searchQuery);
       const queryEmbedding = await generateProductEmbeddings(searchQuery);
       if (!queryEmbedding || queryEmbedding.length === 0) {
+        console.log("Failed to generate embeddings for query:", searchQuery);
         return new Response("Failed to generate embeddings", { status: 400 });
       }
 
+      console.log("Generated embeddings:", queryEmbedding);
       const queryResponse = await index.namespace("products").query({
         vector: queryEmbedding,
-        topK: 3,
+        topK: 15,
         includeMetadata: true,
       });
 
-      const productIds = queryResponse.matches.map((match) => parseInt(match.id, 10)).filter((id) => !isNaN(id));
+      console.log("Query response from Pinecone:", queryResponse);
+
+      const productIds = (queryResponse.matches || []).map((match) => parseInt(match.id, 10)).filter((id) => !isNaN(id));
 
       const exactProductIds = exactMatches.map((product) => product.id);
       const vectorProductIds = productIds.filter((id) => !exactProductIds.includes(id));
 
       if (vectorProductIds.length > 0) {
+        console.log("Fetching vector products with IDs:", vectorProductIds);
         const vectorProducts = await prisma.product.findMany({
           where: {
             id: {
@@ -94,6 +91,8 @@ export async function POST(request: Request) {
             price: true,
           },
         });
+
+        console.log("Vector products fetched:", vectorProducts);
 
         const mappedVectorProducts: TProduct[] = vectorProducts.map((product) => ({
           id: product.id,
@@ -136,7 +135,9 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Catalog API Error:", error);
-    return new Response("Internal server error", { status: 500 });
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
