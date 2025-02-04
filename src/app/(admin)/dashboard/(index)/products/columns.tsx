@@ -14,7 +14,7 @@ import FormDelete from "./_components/form-delete";
 export type TColumn = {
   id: number;
   name: string;
-  image_url: string;
+  image_url: string[];
   category_name: string;
   price: number;
   total_sales: number;

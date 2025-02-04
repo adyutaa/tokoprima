@@ -1,143 +1,55 @@
-import { TFilter } from "@/hooks/useFilter";
-import { Pinecone } from "@pinecone-database/pinecone";
-import { generateProductEmbeddings } from "@/lib/embeddings";
+import { NextRequest, NextResponse } from "next/server";
+import { searchProducts } from "@/app/api/catalog/productService";
 import prisma from "../../../../lib/prisma";
-import { TProduct } from "@/types";
+import { getImageUrl } from "@/lib/supabase";
 
-const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
-const index = pc.Index("ecommerce-test");
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const res = (await request.json()) as TFilter;
-    const searchQuery = res.search?.trim() || "";
-
-    let responseProducts: TProduct[] = [];
-
-    if (searchQuery.trim() !== "") {
-      const searchTokens = searchQuery.toLowerCase().split(/\s+/);
-      const exactMatches = await prisma.product.findMany({
-        where: {
-          AND: searchTokens.map((token) => ({
-            OR: [{ name: { contains: token, mode: "insensitive" } }],
-          })),
-        },
-        select: {
-          id: true,
-          images: true,
-          name: true,
-          category: {
-            select: {
-              name: true,
-            },
-          },
-          price: true,
-          reviews: {
-            select: {
-              comment: true,
-            },
-          },
-        },
-      });
-
-      const exactProducts: TProduct[] = exactMatches.map((product) => ({
-        id: product.id,
-        category_name: product.category.name,
-        image_url: product.images && product.images.length > 0 ? (product.images[0].startsWith("http") ? product.images[0] : `https://gclyhedubfskowdnrtmg.supabase.co/storage/v1/object/public/products/${product.images[0]}`) : null,
-        name: product.name,
-        price: Number(product.price),
-      }));
-
-      responseProducts = exactProducts;
-
-      console.log("Generating embeddings for query:", searchQuery);
-      const queryEmbedding = await generateProductEmbeddings(searchQuery);
-      if (!queryEmbedding || queryEmbedding.length === 0) {
-        console.log("Failed to generate embeddings for query:", searchQuery);
-        return new Response("Failed to generate embeddings", { status: 400 });
-      }
-
-      console.log("Generated embeddings:", queryEmbedding);
-      const queryResponse = await index.namespace("products").query({
-        vector: queryEmbedding,
-        topK: 15,
-        includeMetadata: true,
-      });
-
-      console.log("Query response from Pinecone:", queryResponse);
-
-      const productIds = (queryResponse.matches || []).map((match) => parseInt(match.id, 10)).filter((id) => !isNaN(id));
-
-      const exactProductIds = exactMatches.map((product) => product.id);
-      const vectorProductIds = productIds.filter((id) => !exactProductIds.includes(id));
-
-      if (vectorProductIds.length > 0) {
-        console.log("Fetching vector products with IDs:", vectorProductIds);
-        const vectorProducts = await prisma.product.findMany({
-          where: {
-            id: {
-              in: vectorProductIds,
-            },
-          },
-          select: {
-            id: true,
-            images: true,
-            name: true,
-            category: {
-              select: {
-                name: true,
-              },
-            },
-            price: true,
-          },
-        });
-
-        console.log("Vector products fetched:", vectorProducts);
-
-        const mappedVectorProducts: TProduct[] = vectorProducts.map((product) => ({
-          id: product.id,
-          category_name: product.category.name,
-          image_url: product.images && product.images.length > 0 ? (product.images[0].startsWith("http") ? product.images[0] : `https://gclyhedubfskowdnrtmg.supabase.co/storage/v1/object/public/products/${product.images[0]}`) : null,
-          name: product.name,
-          price: Number(product.price),
-        }));
-
-        responseProducts = responseProducts.concat(mappedVectorProducts);
-      }
+    const { search } = await request.json();
+    let products = [];
+    if (search && search.trim() !== "") {
+      products = await searchProducts(search.trim());
     } else {
-      const products = await prisma.product.findMany({
+      // Jika tidak ada query pencarian, ambil produk dengan paging
+      products = await prisma.product.findMany({
         select: {
           id: true,
           images: true,
           name: true,
-          category: {
-            select: {
-              name: true,
-            },
-          },
+          category: { select: { name: true } },
           price: true,
         },
       });
-
-      responseProducts = products.map((product) => ({
-        id: product.id,
-        category_name: product.category.name,
-        image_url: product.images && product.images.length > 0 ? (product.images[0].startsWith("http") ? product.images[0] : `https://gclyhedubfskowdnrtmg.supabase.co/storage/v1/object/public/products/${product.images[0]}`) : null,
-        name: product.name,
-        price: Number(product.price),
-      }));
     }
 
-    return new Response(JSON.stringify(responseProducts), {
+    // Map the products to include a proper image_url field
+    const mappedProducts = products.map((item) => {
+      // Use existing image_url if available
+      let imageUrl = item.image_url;
+      // Generate from images array if image_url is not present
+      if (!imageUrl && item.images && item.images.length > 0) {
+        imageUrl = item.images[0].startsWith("http") ? item.images[0] : getImageUrl(item.images[0], "products");
+      }
+      return {
+        ...item,
+        image_url: imageUrl || null, // Ensure image_url is set
+      };
+    });
+    console.log("Mapped Products:", mappedProducts);
+
+    return new Response(safeJsonStringify(mappedProducts), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error("Error in API catalog:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
   }
+}
+
+function safeJsonStringify(products: any[]): BodyInit {
+  return JSON.stringify(products, (key, value) => (typeof value === "bigint" ? value.toString() : value));
 }

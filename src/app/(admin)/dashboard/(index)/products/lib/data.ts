@@ -31,7 +31,7 @@ export async function getProducts() {
       return {
         category_name: product.category.name,
         createdAt: product.created_at,
-        image_url: product.images[0],
+        image_url: product.images,
         id: product.id,
         name: product.name,
         price: Number(product.price),
