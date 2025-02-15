@@ -13,7 +13,7 @@ const openai = new OpenAI({
 export async function generateProductEmbeddings(text: string): Promise<number[] | null> {
   try {
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-small",
+      model: "text-embedding-3-large",
       input: text,
     });
     const productEmbeddings = response.data[0].embedding;

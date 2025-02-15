@@ -12,13 +12,13 @@ export async function initializePinecone() {
       console.log('Index "ecommerce-test" does not exist. Creating it now...');
       // Create the index since it doesn't exist
       await pc.createIndex({
-        name: "ecommerce-test",
+        name: "ecommerce-3-large",
         dimension: 1536, // Ensure this matches your embedding size
         metric: "cosine", // Can also be "euclidean" or "dotproduct"
         spec: {
           serverless: {
-            cloud: "gcp",
-            region: "europe-west4", // or your desired region
+            cloud: "aws",
+            region: "us-east-1", // or your desired region
           },
         },
       });
@@ -28,7 +28,7 @@ export async function initializePinecone() {
     }
 
     // Retrieve the index description (this is safe now since we know it exists)
-    const index = await pc.describeIndex("ecommerce-test");
+    const index = await pc.describeIndex("ecommerce-3-large");
     console.log(`Retrieved Pinecone index "${index.name}".`);
 
     return index; // Return the index metadata

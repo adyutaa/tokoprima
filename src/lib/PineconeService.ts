@@ -1,8 +1,8 @@
 import { Pinecone, PineconeRecord, RecordMetadata } from "@pinecone-database/pinecone";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
-const index = pc.index("ecommerce-test");
-const NAMESPACE = "products";
+const index = pc.index("ecommerce-3-large");
+const NAMESPACE = "products-1";
 
 /**
  * Upsert vector untuk produk ke Pinecone.
