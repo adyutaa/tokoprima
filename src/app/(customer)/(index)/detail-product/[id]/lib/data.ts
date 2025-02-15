@@ -20,17 +20,7 @@ export async function getProductById(id: number) {
         images: true,
         description: true,
         price: true,
-        category: { select: { name: true } },
-        reviews: {
-          select: {
-            id: true,
-            rating: true,
-            comment: true,
-            user: {
-              select: { id: true, name: true },
-            },
-          },
-        },
+        categories: true,
       },
     });
 

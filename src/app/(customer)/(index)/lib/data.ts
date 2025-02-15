@@ -1,25 +1,6 @@
 import { getImageUrl } from "@/lib/supabase";
 import prisma from "../../../../../lib/prisma";
 
-export async function getCategories() {
-  try {
-    const categories = await prisma.category.findMany({
-      include: {
-        _count: {
-          select: {
-            products: true,
-          },
-        },
-      },
-    });
-
-    return categories;
-  } catch (error) {
-    console.log(error);
-    return [];
-  }
-}
-
 export async function getProducts() {
   try {
     const products = await prisma.product.findMany({
@@ -27,11 +8,7 @@ export async function getProducts() {
         images: true, // Assuming this is an array of strings
         id: true,
         name: true,
-        category: {
-          select: {
-            name: true,
-          },
-        },
+        categories: true,
         price: true,
       },
     });

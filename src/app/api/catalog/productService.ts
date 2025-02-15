@@ -1,27 +1,25 @@
 import prisma from "../../../../lib/prisma";
 import { generateProductEmbeddings } from "@/lib/embeddings";
 import { upsertProductVector, updateProductVector, deleteProductVector, searchProductVectors } from "@/lib/PineconeService";
-import { ProductStock } from "@prisma/client";
 import { TPineconeProduct, TProduct } from "@/types";
 import { getImageUrl } from "@/lib/supabase";
 
 /**
  * Buat produk baru di PostgreSQL dan upsert vector-nya ke Pinecone.
  */
-export async function createProduct(data: { name: string; description: string; category_id: number; price: number; stock: ProductStock; images: string[] }): Promise<TProduct> {
+export async function createProduct(data: { name: string; description: string; categories: string[]; price: number; images: string[] }): Promise<TProduct> {
   // Pertimbangkan untuk membungkus operasi ini dengan transaksi jika ingin menjamin konsistensi.
   const newProduct = await prisma.product.create({ data });
 
   // Buat embedding dengan menggabungkan informasi relevan
-  const embeddingText = `${newProduct.name} ${newProduct.description} ${newProduct.category_id}`;
+  const embeddingText = `${newProduct.name} ${newProduct.description} ${newProduct.categories}`;
   const embedding = await generateProductEmbeddings(embeddingText);
   if (embedding && embedding.length > 0) {
     await upsertProductVector(newProduct.id, embedding, {
       name: newProduct.name,
       description: newProduct.description,
-      category_id: newProduct.category_id,
+      categories: newProduct.categories,
       price: newProduct.price.toString(),
-      stock: newProduct.stock,
     });
   } else {
     console.error("Gagal menghasilkan embedding untuk produk:", newProduct.id);
@@ -37,9 +35,8 @@ export async function updateProduct(
   data: {
     name: string;
     description: string;
-    category_id: number;
+    categories: string[];
     price: number;
-    stock: ProductStock;
     images: string[];
   }
 ): Promise<TProduct> {
@@ -54,16 +51,15 @@ export async function updateProduct(
   let embedding: number[] | undefined;
   // Hanya generate embedding baru jika ada perubahan signifikan (misalnya nama atau deskripsi)
   if (updatedProduct.name !== product.name || updatedProduct.description !== product.description) {
-    const embeddingText = `${updatedProduct.name} ${updatedProduct.description} ${updatedProduct.category_id}`;
+    const embeddingText = `${updatedProduct.name} ${updatedProduct.description} ${updatedProduct.categories}`;
     embedding = await generateProductEmbeddings(embeddingText);
   }
 
   await updateProductVector(updatedProduct.id, embedding, {
     name: updatedProduct.name,
     description: updatedProduct.description,
-    category_id: updatedProduct.category_id,
+    category_id: updatedProduct.categories,
     price: updatedProduct.price.toString(),
-    stock: updatedProduct.stock.toString(),
     images: updatedProduct.images,
   });
 
@@ -96,7 +92,8 @@ export async function searchProducts(searchQuery: string): Promise<TProduct[]> {
       id: true,
       images: true,
       name: true,
-      category: { select: { name: true } },
+      description: true,
+      categories: true,
       price: true,
     },
   });
@@ -105,7 +102,7 @@ export async function searchProducts(searchQuery: string): Promise<TProduct[]> {
   const exactProducts: TProduct[] = exactMatches.map((product) => ({
     ...product, // Include all product fields, including 'images'
     image_url: product.images && product.images.length > 0 ? (product.images[0].startsWith("http") ? product.images[0] : getImageUrl(product.images[0], "products")) : null,
-    category: { name: product.category.name }, // Adjust according to your type
+    categories: product.categories, // Keep the original categories array
   }));
 
   // Pencarian semantik: buat embedding query dan cari di Pinecone
@@ -126,16 +123,18 @@ export async function searchProducts(searchQuery: string): Promise<TProduct[]> {
         id: true,
         images: true,
         name: true,
-        category: { select: { name: true } },
+        description: true,
+        categories: true,
         price: true,
       },
     });
     vectorProducts = vectorResults.map((product) => ({
       id: product.id,
-      category_name: product.category.name,
-      image_url: product.images && product.images.length > 0 ? (product.images[0].startsWith("http") ? product.images[0] : getImageUrl(product.images[0], "products")) : null,
+      categories: product.categories,
+      images: product.images && product.images.length > 0 ? [product.images[0].startsWith("http") ? product.images[0] : getImageUrl(product.images[0], "products")] : [],
       name: product.name,
-      price: Number(product.price),
+      description: product.description,
+      price: product.price,
     }));
   }
 

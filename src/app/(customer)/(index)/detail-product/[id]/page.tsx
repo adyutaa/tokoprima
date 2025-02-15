@@ -106,45 +106,25 @@ export default async function DetailProductPage({ params }: DetailProductProp) {
             <h3 className="font-semibold">About Product</h3>
             <p className="leading-[32px]">{product.description}</p>
           </div>
-          <div id="testi" className="flex flex-col gap-[10px]">
-            <h3 className="font-semibold">Review Produk</h3>
-            <div className="grid grid-cols-2 gap-5">
-              {product.reviews.map((review) => (
-                <div key={review.id} className="testi-card flex flex-col bg-white p-5 gap-5 border border-[#E5E5E5] rounded-[20px] h-fit">
-                  <div className="flex">
-                    {[...Array(5)].map((_, i) => {
-                      const starSrc = i < Math.round(review.rating) ? "/assets/icons/Star.svg" : "/assets/icons/Star-gray.svg";
-                      return <img key={i} src={starSrc} alt="star" />;
-                    })}
-                  </div>
-                  <p className="line-clamp-2 hover:line-clamp-none leading-[28px]">{review.comment}</p>
-                  <div className="flex items-center gap-[10px]">
-                    <div className="flex flex-col gap-[2px]">
-                      <p className="font-semibold text-sm leading-[22px]">{review.user.name}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {session && (
-            <div className="flex flex-col bg-white p-5 gap-5 border border-[#E5E5E5] rounded-[10px] h-fit">
-              <h4 className="font-semibold text-lg mb-2">Tulis Review</h4>
-              <ReviewForm productId={product.id} />
-            </div>
-          )}
         </div>
-        <PriceInfo
-          isLogIn={session ? true : false}
-          item={{
-            id: product.id,
-            category_name: product.category.name,
-            image_url: product.images[0],
-            name: product.name,
-            price: Number(product.price),
-          }}
-        />
+        {session && (
+          <div className="flex flex-col bg-white p-5 gap-5 border border-[#E5E5E5] rounded-[10px] h-fit">
+            <h4 className="font-semibold text-lg mb-2">Tulis Review</h4>
+            <ReviewForm productId={product.id} />
+          </div>
+        )}
       </div>
+      <PriceInfo
+        isLogIn={session ? true : false}
+        item={{
+          id: product.id,
+          categories: product.categories,
+          images: product.images[0],
+          name: product.name,
+          description: product.description,
+          price: BigInt(product.price),
+        }}
+      />
       <div id="recommedations" className="container max-w-[1130px] mx-auto flex flex-col gap-[30px] pb-[100px] mt-[70px]">
         <Suspense fallback={<span>Loading...</span>}>
           <ListProducts

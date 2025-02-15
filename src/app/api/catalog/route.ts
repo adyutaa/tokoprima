@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
           id: true,
           images: true,
           name: true,
-          category: { select: { name: true } },
+          categories: true,
           price: true,
         },
       });

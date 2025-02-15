@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Product" ALTER COLUMN "name" SET DATA TYPE TEXT,
+ALTER COLUMN "categories" SET DATA TYPE TEXT[];

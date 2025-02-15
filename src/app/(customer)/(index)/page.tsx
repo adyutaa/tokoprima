@@ -1,6 +1,5 @@
 import React, { Suspense } from "react";
 import Navbar from "./_components/navbar";
-import ListCategory from "./_components/list-category";
 import ListProducts from "./_components/list-products";
 // import ListBrands from "./_components/list-brands";
 

@@ -28,7 +28,6 @@ model User {
 
   orders   Order[]
   sessions Session[]
-  reviews  Review[]
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -41,54 +40,20 @@ model Session {
   user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
 }
 
-model Category {
-  id   Int    @id @default(autoincrement())
-  name String @db.VarChar(255)
-
-  products Product[]
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-}
-
-enum ProductStock {
-  ready
-  preorder
-}
-
 model Product {
-  id Int @id @default(autoincrement())
-
-  category_id Int
-  category    Category     @relation(fields: [category_id], references: [id])
-  name        String       @db.VarChar(255)
-  description String       @db.Text
-  price       BigInt       @db.BigInt
-  stock       ProductStock
+  id          Int      @id @default(autoincrement())
+  categories  String[]
+  name        String
+  description String   @db.Text
+  price       BigInt   @db.BigInt
   images      String[]
 
-  orders  OrderProduct[]
-  reviews Review[]
+  orders OrderProduct[]
 
-  rating       Float?
-  rating_count Int?
+  rating Float?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-}
-
-model Review {
-  id         Int      @id @default(autoincrement())
-  user_id    Int
-  user       User     @relation(fields: [user_id], references: [id])
-  product_id Int
-  product    Product  @relation(fields: [product_id], references: [id])
-  rating     Float
-  comment    String   @db.Text
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  @@unique([user_id, product_id])
 }
 
 enum StatusOrder {
