@@ -18,10 +18,8 @@ export async function getProducts() {
         item.images && item.images.length > 0
           ? item.images[0].startsWith("http") // Check if it's already a full URL
             ? item.images[0] // Use the URL as-is
-            : `https://gclyhedubfskowdnrtmg.supabase.co/storage/v1/object/public/products/${item.images[0]}` // Append base URL for file names
+            : `https://gclyhedubfskowdnrtmg.supabase.co/storage/v1/object/public/products/${item.images[0]}`
           : null; // No image available
-
-      console.log("Corrected image_url:", imageUrl); // Debugging
 
       return {
         ...item,
