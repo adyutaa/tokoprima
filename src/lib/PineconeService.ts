@@ -1,8 +1,68 @@
 import { Pinecone, PineconeRecord, RecordMetadata } from "@pinecone-database/pinecone";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
-const index = pc.index("ecommerce-3-large");
-const NAMESPACE = "products-1";
+
+interface PineconeConfig {
+  indexName: string;
+  namespace: string;
+  dimension: number;
+  metric: "cosine" | "euclidean" | "dotproduct";
+  cloud: "aws" | "gcp";
+  region: string;
+}
+
+const INDEX_CONFIG = {
+  name: "ecommerce-3-large",
+  namespace: "products-1",
+  dimension: 3072,
+  metric: "cosine" as const,
+  spec: {
+    serverless: {
+      cloud: "aws" as const,
+      region: "us-east-1",
+    },
+  },
+};
+
+// const INDEX_CONFIG = {
+//   name: "ecommerce-voyage-1024",
+//   namespace: "products-1",
+//   dimension: 1024,
+//   metric: "cosine" as const,
+//   spec: {
+//     serverless: {
+//       cloud: "aws" as const,
+//       region: "us-east-1",
+//     },
+//   },
+// };
+
+export async function initializePinecone() {
+  try {
+    const existingIndexes = await pc.listIndexes();
+
+    if (!existingIndexes.indexes?.some((index) => index.name === INDEX_CONFIG.name)) {
+      console.log(`Creating index "${INDEX_CONFIG.name}"...`);
+      await pc.createIndex({
+        name: INDEX_CONFIG.name,
+        dimension: INDEX_CONFIG.dimension,
+        metric: INDEX_CONFIG.metric,
+        spec: INDEX_CONFIG.spec,
+      });
+      console.log(`Index "${INDEX_CONFIG.name}" created!`);
+    } else {
+      console.log(`Index "${INDEX_CONFIG.name}" exists.`);
+    }
+
+    const index = await pc.describeIndex(INDEX_CONFIG.name);
+    console.log(`Retrieved index "${index.name}".`);
+
+    return index;
+  } catch (error) {
+    console.error("Error initializing Pinecone:", error);
+    throw error;
+  }
+}
 
 /**
  * Upsert vector untuk produk ke Pinecone.
@@ -14,7 +74,8 @@ export async function upsertProductVector(productId: number, embedding: number[]
     metadata,
   };
 
-  await index.namespace(NAMESPACE).upsert([vector]);
+  const index = pc.Index(INDEX_CONFIG.name);
+  await index.namespace(INDEX_CONFIG.namespace).upsert([vector]);
 }
 
 /**
@@ -23,25 +84,29 @@ export async function upsertProductVector(productId: number, embedding: number[]
  */
 export async function updateProductVector(productId: number, embedding: number[] | undefined, metadata: RecordMetadata): Promise<void> {
   // Berdasarkan dokumentasi terbaru, jika ingin update parsial, gunakan operasi update.
+
   const updateData: any = { id: productId.toString(), metadata };
   if (embedding && embedding.length > 0) {
     updateData.values = embedding;
   }
-  await index.namespace(NAMESPACE).update(updateData);
+  const index = pc.Index(INDEX_CONFIG.name);
+  await index.namespace(INDEX_CONFIG.namespace).update(updateData);
 }
 
 /**
  * Hapus vector produk dari Pinecone.
  */
 export async function deleteProductVector(productId: number): Promise<void> {
-  await index.namespace(NAMESPACE).deleteOne(productId.toString());
+  const index = pc.Index(INDEX_CONFIG.name);
+  await index.namespace(INDEX_CONFIG.namespace).deleteOne(productId.toString());
 }
 
 /**
  * Pencarian vector produk berdasarkan query embedding.
  */
 export async function searchProductVectors(queryEmbedding: number[], topK: number = 15) {
-  return await index.namespace(NAMESPACE).query({
+  const index = pc.Index(INDEX_CONFIG.name);
+  return await index.namespace(INDEX_CONFIG.namespace).query({
     vector: queryEmbedding,
     topK,
     includeMetadata: true,

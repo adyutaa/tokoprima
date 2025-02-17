@@ -40,19 +40,3 @@ export async function getProductById(id: number) {
     return null;
   }
 }
-
-// Call your new /api/reviews route to add a review
-export async function addReview(product_id: number, rating: number, comment: string) {
-  const res = await fetch("/api/reviews", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ product_id, rating, comment }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Error creating review: ${res.statusText}`);
-  }
-
-  const newReview = await res.json();
-  return newReview;
-}

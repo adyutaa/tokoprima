@@ -7,6 +7,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import { initializePinecone } from "../lib/pinecone";
 import { generateProductEmbeddings } from "../src/lib/embeddings";
 import { createClient } from "@supabase/supabase-js";
+import { generateVoyageProductEmbeddings } from "@/lib/VoyageAI";
 
 // Initialize Prisma Client
 const prisma = new PrismaClient();
@@ -97,7 +98,7 @@ async function seedDatabase() {
       // }
 
       // Generate embeddings for the product (using description or name)
-      const embedding = await generateProductEmbeddings(description || name);
+      const embedding = await generateVoyageProductEmbeddings(description || name);
       if (!embedding) {
         console.error(`Failed to generate embedding for product ID: ${id}`);
         continue; // Skip the current product if embedding generation failed
