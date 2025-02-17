@@ -8,10 +8,8 @@ import { getImageUrl } from "@/lib/supabase";
  * Buat produk baru di PostgreSQL dan upsert vector-nya ke Pinecone.
  */
 export async function createProduct(data: { name: string; description: string; categories: string[]; price: number; images: string[] }): Promise<TProduct> {
-  // Pertimbangkan untuk membungkus operasi ini dengan transaksi jika ingin menjamin konsistensi.
   const newProduct = await prisma.product.create({ data });
 
-  // Buat embedding dengan menggabungkan informasi relevan
   const embeddingText = `${newProduct.name} ${newProduct.description} ${newProduct.categories}`;
   const embedding = await generateProductEmbeddings(embeddingText);
   if (embedding && embedding.length > 0) {
@@ -80,7 +78,6 @@ export async function deleteProduct(id: number): Promise<void> {
  * Pencarian produk dengan gabungan pencarian eksak (PostgreSQL) dan pencarian semantik (Pinecone).
  */
 export async function searchProducts(searchQuery: string): Promise<TProduct[]> {
-  // Pencarian eksak: gunakan query berbasis token
   const searchTokens = searchQuery.toLowerCase().split(/\s+/);
   const exactMatches = await prisma.product.findMany({
     where: {
@@ -98,14 +95,12 @@ export async function searchProducts(searchQuery: string): Promise<TProduct[]> {
     },
   });
 
-  // In searchProducts function, when mapping results:
   const exactProducts: TProduct[] = exactMatches.map((product) => ({
-    ...product, // Include all product fields, including 'images'
+    ...product,
     image_url: product.images && product.images.length > 0 ? (product.images[0].startsWith("http") ? product.images[0] : getImageUrl(product.images[0], "products")) : null,
-    categories: product.categories, // Keep the original categories array
+    categories: product.categories,
   }));
 
-  // Pencarian semantik: buat embedding query dan cari di Pinecone
   const queryEmbedding = await generateProductEmbeddings(searchQuery);
   console.log("Query Embedding:", queryEmbedding);
   if (!queryEmbedding || queryEmbedding.length === 0) {

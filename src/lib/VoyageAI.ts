@@ -1,4 +1,3 @@
-import cluster from "cluster";
 import { VoyageAIClient } from "voyageai";
 
 const client = new VoyageAIClient({ apiKey: process.env.VOYAGEAI_API_KEY });
