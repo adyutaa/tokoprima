@@ -11,23 +11,10 @@ interface PineconeConfig {
   region: string;
 }
 
-const INDEX_CONFIG = {
-  name: "ecommerce-3-large",
-  namespace: "products-1",
-  dimension: 3072,
-  metric: "cosine" as const,
-  spec: {
-    serverless: {
-      cloud: "aws" as const,
-      region: "us-east-1",
-    },
-  },
-};
-
 // const INDEX_CONFIG = {
-//   name: "ecommerce-voyage-1024",
+//   name: "ecommerce-3-large",
 //   namespace: "products-1",
-//   dimension: 1024,
+//   dimension: 3072,
 //   metric: "cosine" as const,
 //   spec: {
 //     serverless: {
@@ -36,6 +23,19 @@ const INDEX_CONFIG = {
 //     },
 //   },
 // };
+
+const INDEX_CONFIG = {
+  name: "ecommerce-voyage-3-large",
+  namespace: "products-1",
+  dimension: 1024,
+  metric: "cosine" as const,
+  spec: {
+    serverless: {
+      cloud: "aws" as const,
+      region: "us-east-1",
+    },
+  },
+};
 
 export async function initializePinecone() {
   try {
