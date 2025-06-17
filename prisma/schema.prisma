@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,96 +8,83 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum RoleUser {
-  superadmin
-  customer
-}
-
 model User {
-  id       Int      @id @default(autoincrement())
-  name     String   @db.VarChar(255)
-  email    String   @unique @db.VarChar(255)
-  password String   @db.VarChar(255)
-  role     RoleUser @default(customer)
-
-  orders   Order[]
-  sessions Session[]
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(255)
+  email      String    @unique @db.VarChar(255)
+  password   String    @db.VarChar(255)
+  role       RoleUser  @default(customer)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  orders     Order[]
+  sessions   Session[]
 }
 
 model Session {
   id        String   @id
   userId    Int
   expiresAt DateTime
-  user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  categories  String[]
+  id          Int            @id @default(autoincrement())
   name        String
-  description String   @db.Text
-  price       BigInt   @db.BigInt
+  description String
+  price       BigInt
   images      String[]
+  created_at  DateTime       @default(now())
+  updated_at  DateTime       @updatedAt
+  categories  String[]
+  orders      OrderProduct[]
+}
 
-  orders OrderProduct[]
+model Order {
+  id         Int            @id @default(autoincrement())
+  code       String         @unique
+  user_id    Int
+  total      BigInt
+  status     StatusOrder
+  created_at DateTime       @default(now())
+  updated_at DateTime       @updatedAt
+  user       User           @relation(fields: [user_id], references: [id])
+  detail     OrderDetail?
+  products   OrderProduct[]
+}
 
-  rating Float?
+model OrderDetail {
+  id          Int      @id @default(autoincrement())
+  order_id    Int      @unique
+  name        String   @db.VarChar(255)
+  phone       String   @db.VarChar(255)
+  address     String   @db.VarChar(255)
+  city        String   @db.VarChar(255)
+  postal_code String   @db.VarChar(255)
+  notes       String?  @db.VarChar(255)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  order       Order    @relation(fields: [order_id], references: [id])
+}
 
+model OrderProduct {
+  id         Int      @id @default(autoincrement())
+  product_id Int
+  order_id   Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  quantity   Int
+  subtotal   BigInt
+  order      Order    @relation(fields: [order_id], references: [id])
+  product    Product  @relation(fields: [product_id], references: [id])
+}
+
+enum RoleUser {
+  superadmin
+  customer
 }
 
 enum StatusOrder {
   pending
   success
   failed
-}
-
-model Order {
-  id Int @id @default(autoincrement())
-
-  code    String      @unique @db.Text
-  user_id Int
-  user    User        @relation(fields: [user_id], references: [id])
-  total   BigInt      @db.BigInt
-  status  StatusOrder
-
-  detail   OrderDetail?
-  products OrderProduct[]
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-}
-
-model OrderDetail {
-  id Int @id @default(autoincrement())
-
-  order_id    Int     @unique
-  order       Order   @relation(fields: [order_id], references: [id])
-  name        String  @db.VarChar(255)
-  phone       String  @db.VarChar(255)
-  address     String  @db.VarChar(255)
-  city        String  @db.VarChar(255)
-  postal_code String  @db.VarChar(255)
-  notes       String? @db.VarChar(255)
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-}
-
-model OrderProduct {
-  id         Int     @id @default(autoincrement())
-  product_id Int
-  product    Product @relation(fields: [product_id], references: [id])
-  order_id   Int
-  order      Order   @relation(fields: [order_id], references: [id])
-
-  subtotal BigInt @db.BigInt
-  quantity Int    @db.Integer
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
 }

@@ -1,24 +1,16 @@
-import { ProductStock } from "@prisma/client";
 import { create } from "zustand";
-
+import { PrismaClient } from "@prisma/client";
 export type TFilter = {
   search?: string;
   minPrice?: number;
   maxPrice?: number;
-  stock?: ProductStock[] | null;
-  brands?: number[] | null;
-  locations?: number[] | null;
   categories?: number[] | null;
-};
-
-export type TReview = {
-  id: number;
-  rating: number;
-  comment: string;
-  user: {
-    id: number;
-    name: string;
-  };
+  model?: string;
+  indexName?: string;
+  namespace?: string;
+  stock?: any | null;
+  brands?: any | null;
+  locations?: any | null;
 };
 
 export interface FilterState {
@@ -35,6 +27,9 @@ export const useFilter = create<FilterState>()((set) => ({
     brands: null,
     categories: null,
     locations: null,
+    model: "voyage",
+    indexName: "ecommerce-voyage-3-large",
+    namespace: "products-1",
   },
   setFilter: (filter) =>
     set((state) => ({

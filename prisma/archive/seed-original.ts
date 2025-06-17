@@ -1,9 +1,8 @@
-// scripts/seedPinecone.ts
 import { PrismaClient } from "@prisma/client";
 import fs from "fs";
 import csvParser from "csv-parser";
 import { Pinecone } from "@pinecone-database/pinecone";
-import { generateProductEmbeddings } from "../src/lib/embeddings";
+import { generateProductEmbeddings } from "../../src/lib/embeddings";
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
 import path from "path";
@@ -26,6 +25,18 @@ const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
 const index = pc.Index("ecommerce-3-large");
 const ns = index.namespace("products-1");
 
+// Helper function to clean and validate URLs
+function cleanUrl(url: string): string | null {
+  const cleanedUrl = url.replace(/[\[\]"]/g, "").trim();
+  try {
+    new URL(cleanedUrl);
+    return cleanedUrl;
+  } catch (error) {
+    console.error(`Invalid URL: ${cleanedUrl}`);
+    return null;
+  }
+}
+
 // Map of common image MIME types
 const mimeTypes: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -43,29 +54,21 @@ function getMimeType(filePath: string): string {
   return mimeTypes[ext] || "application/octet-stream"; // Default if the MIME type isn't found
 }
 
-// Helper function to clean and validate URLs
-function cleanUrl(url: string): string | null {
-  const cleanedUrl = url.replace(/[\[\]"]/g, "").trim();
-  try {
-    new URL(cleanedUrl);
-    return cleanedUrl;
-  } catch (error) {
-    console.error(`Invalid URL: ${cleanedUrl}`);
-    return null;
-  }
-}
-
 // Function to download and upload images to Supabase
 async function downloadAndUploadImage(imageUrl: string, productId: string): Promise<string> {
   try {
     const cleanedUrl = cleanUrl(imageUrl);
-    if (!cleanedUrl) return "";
+    if (!cleanedUrl) {
+      console.error(`Invalid URL for product ${productId}:`, imageUrl);
+      return "";
+    }
 
-    console.log(`Downloading image from: ${cleanedUrl}`);
+    console.log(`Downloading image from: ${cleanedUrl}`); // Log the URL being processed
+
     const bucketName = "ecommerce";
     const protocol = cleanedUrl.startsWith("https") ? https : http;
 
-    // Download image stream
+    // Download image stream from the URL
     const response = await new Promise<Buffer>((resolve, reject) => {
       protocol.get(cleanedUrl, (res) => {
         const chunks: Buffer[] = [];
@@ -75,7 +78,7 @@ async function downloadAndUploadImage(imageUrl: string, productId: string): Prom
       });
     });
 
-    console.log(`Downloaded image for product ${productId}`);
+    console.log(`Downloaded image for product ${productId}: ${cleanedUrl}`); // Log successful download
 
     // Get MIME type and upload
     const mimeType = getMimeType(cleanedUrl);
@@ -91,71 +94,112 @@ async function downloadAndUploadImage(imageUrl: string, productId: string): Prom
       return "";
     }
 
-    return supabase.storage.from(bucketName).getPublicUrl(`products/${uniqueFilename}`).data.publicUrl;
+    const publicURL = supabase.storage.from(bucketName).getPublicUrl(`products/${uniqueFilename}`).data.publicUrl;
+    console.log(`Uploaded image for product ${productId}: ${publicURL}`); // Log successful upload
+
+    return publicURL;
   } catch (error) {
     console.error(`Failed to download/upload image for product ${productId}:`, error);
     return "";
   }
 }
 
-// Function to insert/update products in Supabase and sync with Pinecone
+// Function to seed the database
 async function seedDatabase() {
   try {
-    const filePath = "Categories-Refined.csv"; // Update this path
+    // Clear existing products and Pinecone vectors
+    await prisma.product.deleteMany({});
+    console.log("Cleared existing products from the database.");
+
+    await ns.deleteAll();
+    console.log("Cleared all vectors in the Pinecone namespace.");
+
+    const filePath = "SEED-2-8FEB-FIXBANGET.csv"; // Update this path
     const records: any[] = [];
 
     // Read CSV file
     await new Promise((resolve, reject) => {
       fs.createReadStream(filePath)
         .pipe(csvParser())
-        .on("data", (row: Record<string, string>) => records.push(row))
+        .on("data", (row: Record<string, string>) => {
+          records.push(row);
+        })
         .on("end", resolve)
         .on("error", reject);
     });
 
+    // Seed data into Supabase (PostgreSQL) via Prisma
     for (const record of records) {
       const { id, name, categories, description, price, images } = record;
-      console.log(`Processing ID: ${id} for product: ${name}`);
 
+      // Validate the ID
       if (!id || isNaN(parseInt(id))) {
         console.error(`Invalid ID for product: ${id}. Skipping product.`);
-        continue;
+        continue; // Skip this product if the ID is invalid
       }
 
+      // Check if images field is missing or empty
       if (!images || images.trim() === "") {
         console.log(`No images found for product ${id}. Skipping product.`);
-        continue;
+        continue; // Skip this product if there are no images
       }
 
       const imageUrls = images.split(",").map((img: string) => img.trim());
-      const uploadedImages: string[] = [];
+      console.log(`Image URLs for product ${id}:`, imageUrls); // Log the extracted image URLs
 
+      // Proceed with downloading and uploading images
+      const uploadedImages: string[] = [];
       for (const imageUrl of imageUrls) {
         const uploadedImageUrl = await downloadAndUploadImage(imageUrl, id.toString());
-        if (uploadedImageUrl) uploadedImages.push(uploadedImageUrl);
+        if (uploadedImageUrl) {
+          uploadedImages.push(uploadedImageUrl); // Add the URL to the array
+        }
       }
 
-      // Split categories string into an array and clean up each category
-      const categoryArray = categories ? categories.split(",").map((cat: string) => cat.trim().replace(/[\[\]'"]/g, "")) : [];
+      console.log(`Uploaded images for product ${id}:`, uploadedImages); // Log uploaded images
 
-      // Insert or update product in Supabase
-      const existingProduct = await prisma.product.findUnique({ where: { id: parseInt(id) } });
+      // Convert categories to an array
+      const categoryArray = categories ? categories.split(",") : [];
 
-      if (existingProduct) {
-        await prisma.product.update({
-          where: { id: parseInt(id) },
-          data: { name, categories: categoryArray, description, price: parseFloat(price), images: uploadedImages },
-        });
-      } else {
-        await prisma.product.create({
-          data: { id: parseInt(id), name, categories: categoryArray, description, price: parseFloat(price), images: uploadedImages },
-        });
+      // Insert or update the product in the database
+      const product = await prisma.product.upsert({
+        where: { id: parseInt(id) }, // Find the product by ID
+        update: {
+          name,
+          categories: categoryArray,
+          description,
+          price: parseFloat(price),
+          images: uploadedImages,
+        },
+        create: {
+          id: parseInt(id),
+          name,
+          categories: categoryArray,
+          description,
+          price: parseFloat(price),
+          images: uploadedImages,
+        },
+      });
+
+      console.log(`Upserted product into Supabase with ID: ${product.id}`);
+
+      // Generate embeddings for the product (using description or name)
+      const embedding = await generateProductEmbeddings(description || name);
+      if (!embedding) {
+        console.error(`Failed to generate embedding for product ID: ${id}`);
+        continue; // Skip if embedding fails
       }
 
-      console.log(`Inserted/updated product in Supabase with ID: ${id}`);
+      // Insert or update vector in Pinecone
+      await ns.upsert([
+        {
+          id: id.toString(),
+          values: embedding,
+          metadata: { name, description, categories, price },
+        },
+      ]);
 
-      // Sync with Pinecone
-      await updatePinecone(id, name, description, categoryArray, parseFloat(price));
+      console.log(`Upserted vector into Pinecone for product ID: ${id}`);
     }
 
     console.log("Seeding completed successfully!");
@@ -166,44 +210,5 @@ async function seedDatabase() {
   }
 }
 
-// Function to update Pinecone vector
-async function updatePinecone(id: string, name: string, description: string, categories: string[], price: number) {
-  const embedding = await generateProductEmbeddings(`${name} ${description} ${categories.join(" ")} ${price}`);
-  if (!embedding) {
-    console.error(`Failed to generate embedding for product ID: ${id}`);
-    return;
-  }
-
-  await ns.upsert([
-    {
-      id: id.toString(),
-      values: embedding,
-      metadata: { name, description, categories, price },
-    },
-  ]);
-
-  console.log(`Inserted vector into Pinecone for product ID: ${id}`);
-}
-
-// Function to resync Pinecone with Supabase (Run manually if needed)
-async function syncPineconeWithSupabase() {
-  console.log("Starting Pinecone sync...");
-  const products = await prisma.product.findMany();
-
-  for (const product of products) {
-    const existingVector = await ns.fetch([product.id.toString()]);
-
-    if (!existingVector.records[product.id.toString()]) {
-      console.log(`Fixing missing Pinecone vector for ${product.id}`);
-      await updatePinecone(product.id.toString(), product.name, product.description, product.categories, Number(product.price));
-    }
-  }
-
-  console.log("Pinecone sync completed!");
-}
-
 // Run the seed function
 seedDatabase();
-
-// Uncomment to manually sync Pinecone if needed
-// syncPineconeWithSupabase();

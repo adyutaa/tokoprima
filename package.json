@@ -12,6 +12,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@google/genai": "^0.8.0",
     "@lucia-auth/adapter-prisma": "^4.0.1",
     "@pinecone-database/pinecone": "^4.0.0",
     "@radix-ui/react-label": "^2.0.2",
@@ -40,6 +41,7 @@
     "react": "^18",
     "react-dom": "^18",
     "react-flickity-component": "^4.0.7",
+    "retrieval": "^1.7.2",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
     "voyageai": "^0.0.3-1",

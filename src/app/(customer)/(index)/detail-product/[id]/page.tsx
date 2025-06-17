@@ -7,9 +7,6 @@ import { Tparams } from "@/types";
 import { getProductById } from "./lib/data";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth";
-import { useState } from "react";
-import { TReview } from "@/hooks/useFilter";
-import ReviewForm from "./_components/review-form";
 
 interface DetailProductProp {
   params: Tparams;
@@ -41,28 +38,25 @@ export default async function DetailProductPage({ params }: DetailProductProp) {
           </div>
           <h1 className="font-bold text-4xl leading-9">{product.name}</h1>
         </div>
-        <div className="flex items-center gap-2 justify-end">
-          <div className="flex items-center">
-            <div className="flex shrink-0">
-              <img src="/assets/icons/Star.svg" alt="star" />
-            </div>
-            <div className="flex shrink-0">
-              <img src="/assets/icons/Star.svg" alt="star" />
-            </div>
-            <div className="flex shrink-0">
-              <img src="/assets/icons/Star.svg" alt="star" />
-            </div>
-            <div className="flex shrink-0">
-              <img src="/assets/icons/Star.svg" alt="star" />
-            </div>
-            <div className="flex shrink-0">
-              <img src="/assets/icons/Star-gray.svg" alt="star" />
-            </div>
-          </div>
-          <p className="font-semibold">({product._count.orders})</p>
+      </div>
+      <div className="container max-w-[1130px] mx-auto flex gap-[30px] mt-[50px] pb-[100px] justify-between">
+        <div>
+          <CarouseImages images={product.images} />
+        </div>
+        <div>
+          <PriceInfo
+            isLogIn={session ? true : false}
+            item={{
+              id: product.id,
+              categories: product.categories,
+              images: product.images[0],
+              name: product.name,
+              description: product.description,
+              price: BigInt(product.price),
+            }}
+          />
         </div>
       </div>
-      <CarouseImages images={product.images} />
       <div id="details-benefits" className="container max-w-[1130px] mx-auto flex items-center gap-[50px] justify-center mt-[50px]">
         <div className="flex items-center gap-[10px]">
           <div className="w-12 h-12 flex shrink-0 rounded-full bg-[#FFC736] items-center justify-center overflow-hidden">
@@ -107,24 +101,8 @@ export default async function DetailProductPage({ params }: DetailProductProp) {
             <p className="leading-[32px]">{product.description}</p>
           </div>
         </div>
-        {session && (
-          <div className="flex flex-col bg-white p-5 gap-5 border border-[#E5E5E5] rounded-[10px] h-fit">
-            <h4 className="font-semibold text-lg mb-2">Tulis Review</h4>
-            <ReviewForm productId={product.id} />
-          </div>
-        )}
       </div>
-      <PriceInfo
-        isLogIn={session ? true : false}
-        item={{
-          id: product.id,
-          categories: product.categories,
-          images: product.images[0],
-          name: product.name,
-          description: product.description,
-          price: BigInt(product.price),
-        }}
-      />
+
       <div id="recommedations" className="container max-w-[1130px] mx-auto flex flex-col gap-[30px] pb-[100px] mt-[70px]">
         <Suspense fallback={<span>Loading...</span>}>
           <ListProducts

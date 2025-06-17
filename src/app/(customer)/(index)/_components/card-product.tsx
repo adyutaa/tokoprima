@@ -12,7 +12,7 @@ export default function CardProduct({ item }: CardProductProps) {
     <Link href={`/detail-product/${item.id}`} className="product-card">
       <div className="bg-white flex flex-col gap-[24px] p-5 rounded-[20px] ring-1 ring-[#E5E5E5] hover:ring-2 hover:ring-[#FFC736] transition-all duration-300 w-full">
         <div className="w-full h-[90px] flex shrink-0 items-center justify-center overflow-hidden">
-          <img className="h-full object-contain" src={item.images?.[0] || "https://gclyhedubfskowdnrtmg.supabase.co/storage/v1/object/public/ecommerce/products/default-image.png"} />
+          <img className="h-full object-contain" src={item.images?.[0] || "https://gclyhedubfskowdnrtmg.supabase.co/storage/v1/object/public/ecommerce/products/no-image.png"} />
         </div>
         <div className="flex flex-col gap-[10px]">
           <div className="flex flex-col gap-1">

@@ -34,7 +34,7 @@
     "**/*.ts",
     "**/*.tsx"
 , "babel.config.js"  ,
-"src/**/*", "prisma/seed.ts"
+"src/**/*", "prisma/archive/seed.ts"
 
 ],
   "exclude": [

@@ -53,9 +53,7 @@
 //   },
 // };
 
-import { Pinecone } from "@pinecone-database/pinecone";
 
-const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
 
 interface PineconeConfig {
   indexName: string;
@@ -64,6 +62,10 @@ interface PineconeConfig {
   cloud: "aws" | "gcp";
   region: string;
 }
+
+import { Pinecone } from "@pinecone-database/pinecone";
+
+const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
 
 const INDEX_CONFIG = {
   name: "ecommerce-3-large",

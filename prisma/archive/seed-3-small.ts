@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import fs from "fs";
 import csvParser from "csv-parser";
 import { Pinecone } from "@pinecone-database/pinecone";
-import { generateProductEmbeddings } from "../src/lib/embeddings";
+import { generateProductEmbeddings } from "../../src/lib/embeddings";
 
 const prisma = new PrismaClient();
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
