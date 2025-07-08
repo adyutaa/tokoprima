@@ -42,7 +42,7 @@ export default function CartProducts() {
           </div>
           <div className="w-[150px] flex flex-col gap-1">
             <p className="text-sm text-[#616369]">Total</p>
-            <p className="font-semibold text-[#0D5CD7] leading-[22px]">{rupiahFormat(cart.price * cart.quantity)}</p>
+            <p className="font-semibold text-[#0D5CD7] leading-[22px]">{rupiahFormat(Number(cart.price * BigInt(cart.quantity)))}</p>
           </div>
           <button type="button" onClick={() => removeProduct(cart.id)} className="p-[12px_24px] bg-white rounded-full text-center font-semibold border border-[#E5E5E5]">
             Remove

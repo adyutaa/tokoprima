@@ -25,7 +25,7 @@ export default function CheckoutForm() {
   const { products } = useCart();
 
   const grandTotal = useMemo(() => {
-    return products.reduce((prev, curr) => prev + curr.price * curr.quantity, 0);
+    return products.reduce((prev, curr) => prev + (curr.price * BigInt(curr.quantity)), 0n);
   }, [products]);
 
   const storeOrderParams = (_: unknown, formData: FormData) => storeOrder(_, formData, grandTotal, products);

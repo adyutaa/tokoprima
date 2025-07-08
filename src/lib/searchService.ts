@@ -1,4 +1,5 @@
-import prisma from "../../../../lib/prisma";
+
+import prisma from "../../lib/prisma";
 import { generateProductEmbeddings } from "@/lib/embeddings";
 import { generateVoyageProductEmbeddings } from "@/lib/VoyageAI";
 import { searchProductVectors } from "@/lib/PineconeService";
@@ -137,12 +138,10 @@ class SearchLogger {
     this.requestId = generateRequestId();
   }
 
-  /**
-   * Logs the start of a search query
-   */
   logQueryStart(query: string, params?: any) {
-    console.log(`\n┌───────────────────────────────────────────────────────────────────────────`);
-    console.log(`│ 🔍 PURE SEMANTIC SEARCH [${this.requestId}] ${new Date().toISOString()}`);
+    console.log(`
+┌───────────────────────────────────────────────────────────────────────────`);
+    console.log(`│  PURE SEMANTIC SEARCH [${this.requestId}] ${new Date().toISOString()}`);
     console.log(`│ Query: "${query}"`);
 
     if (params) {
@@ -153,21 +152,13 @@ class SearchLogger {
       console.log(`│   - Top K: ${params.topK}`);
       console.log(`│   - Similarity Threshold: ${params.similarityThreshold}`);
     }
-
-    // Start total timer
     this.startTimer("total");
   }
 
-  /**
-   * Logs the embedding model being used
-   */
   logEmbeddingModel(model: string) {
-    console.log(`│ 🧠 EMBEDDING MODEL: ${model.toUpperCase()}`);
+    console.log(`│  EMBEDDING MODEL: ${model.toUpperCase()}`);
   }
 
-  /**
-   * Logs the query embedding generation
-   */
   logEmbeddingGeneration(success: boolean, error?: any) {
     if (success) {
       console.log(`│ ✅ EMBEDDING: Query vector generated successfully`);
@@ -179,22 +170,16 @@ class SearchLogger {
     }
   }
 
-  /**
-   * Logs similarity search execution
-   */
   logSimilaritySearch(indexName: string, namespace: string, topK: number) {
-    console.log(`│ 🔎 VECTOR SEARCH: Querying Pinecone index "${indexName}"`);
+    console.log(`│  VECTOR SEARCH: Querying Pinecone index "${indexName}"`);
     console.log(`│   - Namespace: "${namespace}"`);
     console.log(`│   - Top K results: ${topK}`);
   }
 
-  /**
-   * Logs similarity search results
-   */
   logSimilarityResults(matches: any[]) {
     const duration = this.durations.get("vector_search") || 0;
 
-    console.log(`│ 📊 VECTOR RESULTS: Found ${matches.length} similar products in ${duration}ms`);
+    console.log(`│  VECTOR RESULTS: Found ${matches.length} similar products in ${duration}ms`);
 
     if (matches.length > 0) {
       const avgScore = matches.reduce((sum, match) => sum + match.score, 0) / matches.length;
@@ -210,17 +195,11 @@ class SearchLogger {
     }
   }
 
-  /**
-   * Logs when no results meet the similarity threshold
-   */
   logNoResults(threshold: number) {
     console.log(`│ ⚠️  NO RESULTS: No products found above similarity threshold of ${threshold}`);
     console.log(`│    Consider lowering the threshold for more results`);
   }
 
-  /**
-   * Logs missing products warning
-   */
   logMissingProducts(missingIds: number[], totalMatches: number, retrievedCount: number) {
     console.log(`│ ⚠️  SYNC WARNING: ${missingIds.length} products exist in Pinecone but not in PostgreSQL`);
     console.log(`│   - Total vector matches: ${totalMatches}`);
@@ -228,15 +207,12 @@ class SearchLogger {
     console.log(`│   - Missing IDs: ${missingIds.slice(0, 10).join(", ")}${missingIds.length > 10 ? "..." : ""}`);
   }
 
-  /**
-   * Logs the returned products
-   */
   logReturnedProducts(products: any[]) {
-    console.log(`│ 📦 FINAL RESULTS: ${products.length} semantically ranked products`);
+    console.log(`│  FINAL RESULTS: ${products.length} semantically ranked products`);
 
     if (products.length > 0) {
       console.log(`│`);
-      console.log(`│ 🏆 Top Semantic Matches:`);
+      console.log(`│  Top Semantic Matches:`);
 
       products.slice(0, 5).forEach((product, idx) => {
         console.log(`│`);
@@ -258,16 +234,12 @@ class SearchLogger {
     }
   }
 
-  /**
-   * Logs total search duration and performance breakdown
-   */
   logSearchComplete() {
     const totalDuration = this.endTimer("total");
 
     console.log(`│`);
     console.log(`│ ⏱️  PERFORMANCE BREAKDOWN:`);
 
-    // Calculate percentages
     const operations = [
       { name: "embedding_generation", label: "Query Embedding" },
       { name: "vector_search", label: "Vector Search" },
@@ -283,20 +255,15 @@ class SearchLogger {
 
     console.log(`│   - Total Duration: ${totalDuration}ms`);
     console.log(`│`);
-    console.log(`│ 🎯 SEARCH TYPE: Pure Semantic Vector Search (No Exact Matching)`);
-    console.log(`└───────────────────────────────────────────────────────────────────────────\n`);
+    console.log(`│  SEARCH TYPE: Pure Semantic Vector Search (No Exact Matching)`);
+    console.log(`└───────────────────────────────────────────────────────────────────────────
+`);
   }
 
-  /**
-   * Helper to start a timer
-   */
   startTimer(name: string) {
     this.timers.set(name, performance.now());
   }
 
-  /**
-   * Helper to end a timer and return duration
-   */
   endTimer(name: string): number {
     const start = this.timers.get(name);
     if (!start) return 0;

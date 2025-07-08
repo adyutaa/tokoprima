@@ -55,7 +55,25 @@ export const useCart = create<CartState>()(
         }),
         {
             name: 'cart-product-belanja',
-            storage: createJSONStorage(() => sessionStorage)
+            storage: createJSONStorage(() => sessionStorage, {
+                replacer: (key, value) => {
+                    if (typeof value === 'bigint') {
+                        return value.toString();
+                    }
+                    return value;
+                },
+                reviver: (key, value) => {
+                    if (key === 'price' && typeof value === 'string' && /^-?\d+$/.test(value)) {
+                        try {
+                            return BigInt(value);
+                        } catch (e) {
+                            console.error("Failed to revive BigInt for price:", value, e);
+                            return value; // Return original value if conversion fails
+                        }
+                    }
+                    return value;
+                },
+            }),
         }
     )
 )
