@@ -3,7 +3,7 @@ import { Pinecone, PineconeRecord, RecordMetadata } from "@pinecone-database/pin
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
 
 /**
- * Dynamically initialize Pinecone index based on indexName.
+ * initialize Pinecone index based on indexName.
  */
 export async function initializePinecone(indexName: string) {
   try {
@@ -13,7 +13,7 @@ export async function initializePinecone(indexName: string) {
       console.log(`Creating index "${indexName}"...`);
       await pc.createIndex({
         name: indexName,
-        dimension: indexName === "ecommerce-3-large" ? 3072 : 1024, 
+        dimension: indexName === "ecommerce-3-large" ? 3072 : 1024,
         metric: "cosine" as const,
         spec: {
           serverless: {
@@ -54,7 +54,7 @@ export async function upsertProductVector(productId: number, embedding: number[]
 /**
  * Perform a vector search on Pinecone based on the given queryEmbedding and indexName.
  */
-export async function searchProductVectors(queryEmbedding: number[], indexName: string, topK: number = 15) {
+export async function searchProductVectors(queryEmbedding: number[], indexName: string, topK: number = 12) {
   const index = pc.Index(indexName); // Dynamically use the indexName here
   return await index.namespace("products-1").query({
     vector: queryEmbedding,

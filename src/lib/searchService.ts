@@ -1,4 +1,3 @@
-
 import prisma from "../../lib/prisma";
 import { generateProductEmbeddings } from "@/lib/embeddings";
 import { generateVoyageProductEmbeddings } from "@/lib/VoyageAI";
@@ -10,7 +9,7 @@ export async function searchProducts(
   model: "openai" | "voyage" = "voyage",
   indexName: string = "ecommerce-voyage-3-large",
   namespace: string = "products-1",
-  topK: number = 50,
+  topK: number = 12,
   similarityThreshold: number = 0.3
 ): Promise<any[]> {
   const logger = new SearchLogger();
@@ -84,7 +83,7 @@ export async function searchProducts(
   logger.logReturnedProducts(rankedProducts);
   logger.logSearchComplete();
 
-  return rankedProducts;
+  return rankedProducts.slice(0, 12);
 }
 
 function createRankedProducts(products: any[], idToScoreMap: { [key: number]: number }): any[] {
