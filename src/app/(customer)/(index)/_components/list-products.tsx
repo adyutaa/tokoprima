@@ -7,10 +7,11 @@ import CardProduct from "./card-product";
 interface ListProductProps {
   title: ReactNode;
   isShowDetail?: boolean;
+  limit?: number; // Tambahkan prop limit
 }
 
-export default async function ListProducts({ title, isShowDetail = true }: ListProductProps) {
-  const products = await getProducts();
+export default async function ListProducts({ title, isShowDetail = true, limit }: ListProductProps) {
+  const products = await getProducts(limit); // Teruskan limit ke getProducts
 
   return (
     <div id="picked" className="flex flex-col gap-[30px]">

@@ -5,8 +5,10 @@ import { getImageUrl } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
-    // Logika untuk mengambil semua produk tanpa pencarian
+    const { limit } = await request.json();
+
     const products = await prisma.product.findMany({
+      take: limit || undefined, // Gunakan limit jika ada, jika tidak biarkan undefined
       select: {
         id: true,
         images: true,

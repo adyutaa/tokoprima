@@ -99,6 +99,7 @@ export default function LandingPage() {
                 Most Picked <br /> Quality Products
               </>
             }
+            limit={30} // Batasi 30 produk
           />
           <ListProducts
             title={
@@ -106,6 +107,7 @@ export default function LandingPage() {
                 New Releases <br /> From Official Stores
               </>
             }
+            limit={30} // Batasi 30 produk
           />
         </Suspense>
       </section>
